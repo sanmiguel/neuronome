@@ -44,24 +44,29 @@ defmodule Neuronome.Matrix do
   def gray(l) when l < 7, do: byte(l, l, l)
 
   defp cloudbase() do
-    << 0x00, 0x00, 0x00, 0x37, 0x37, 0x37, 0x00, 0x00,
-       0x00, 0x37, 0x37, 0x37, 0x37, 0x37, 0x37, 0x00,
-       0x37, 0x37, 0x37, 0x37, 0x37, 0x37, 0x37, 0x37,
-       0x37, 0x37, 0x37, 0x37, 0x37, 0x37, 0x37, 0x37,
-       0x00, 0x37, 0x37, 0x37, 0x37, 0x37, 0x37, 0x00 >>
+    << 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x00, 0x00,
+       0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00,
+       0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+       0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+       0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 >>
   end
 
+  def term_animate(n) do
+    render = fn(fr) -> format(fr) |> IO.puts end
+    cloud_loop(render, n, cloudbase(), [drops(1), drops(1), drops(1)])
+  end
   def cloud_loop(spi, n) do
-    cloud_loop(spi, n, cloudbase(), [drops(1), drops(1), drops(1)])
+    render = fn(fr) -> SPI.transfer(spi, fr) end
+    cloud_loop(render, n, cloudbase(), [drops(1), drops(1), drops(1)])
   end
   def cloud_loop(_, 0, _, _), do: :ok
-  def cloud_loop(spi, n, base, [drops1, drops2, _]) do
+  def cloud_loop(render, n, base, [drops1, drops2, _]) do
     drops0 = drops(1)
-    cloud = base <> drops0 <> reverse(drops1) <> reverse(drops1)
+    cloud = base <> drops0 <> drops1 <> drops2
     cloud = :binary.part(cloud, {0, 64})
-    SPI.transfer(spi, cloud)
+    render.(cloud)
     :timer.sleep(500)
-    cloud_loop(spi, (n-1), base, [drops0, drops1, drops2])
+    cloud_loop(render, (n-1), base, [drops0, drops1, drops2])
   end
 
   def byte_to_str(<< x :: binary-size(1) >>) do
@@ -69,14 +74,24 @@ defmodule Neuronome.Matrix do
     int_to_str(i, 16)
   end
 
+  def dot(), do: ""
+
+  def colour(<< r :: 3, g :: 3, b :: 2 >>) do
+    r = trunc( 5 * r / 7 )
+    g = trunc( 5 * g / 7 )
+    b = trunc( 5 * b / 3 )
+    IO.ANSI.color(r, g, b)
+  end
+
   def int_to_str(i, b) when i < b, do: "0"<>:erlang.integer_to_binary(i, b)
   def int_to_str(i, b), do: :erlang.integer_to_binary(i, b)
 
-  def str(bytes, len), do: str(bytes, <<>>, len, 0)
-  defp str(xs, str, len, len), do: str(xs, str<>"\n", len, 0)
-  defp str(<<>>, str, _, _), do: str
-  defp str(<< x :: binary-size(1), xs :: binary >>, str, len, n) do
-    str(xs, str <> " " <> byte_to_str(x), len, n+1)
+  def format(bytes), do: format(bytes, 8)
+  def format(bytes, len), do: format(bytes, [], len, 0)
+  defp format(xs, str, len, len), do: format(xs, [str, "\n"], len, 0)
+  defp format(<<>>, str, _, _), do: str
+  defp format(<< x :: binary-size(1), xs :: binary >>, str, len, n) do
+    format(xs, [ str, " ", IO.ANSI.format([ colour(x), dot() ]) ], len, n+1)
   end
 
   def reverse(bin), do: reverse(bin, <<>>)
@@ -90,13 +105,14 @@ defmodule Neuronome.Matrix do
       drops() <> drops() <> drops()
   end
 
-  def drops(drops \\ 1) do
+  def drops(drops \\ 1, len \\ 8) do
     # TODO wind
     # cloud base width is 6
     # pick a random number 0-5
     idx = Enum.random(0..5)
     rain = <<0x00>> <> :binary.copy(<<0x00>>, idx) <> << 0x01 >>
-    rain <> :binary.copy(<<0x00>>, (8 - idx + 1))
+    rain <> :binary.copy(<<0x00>>, (len - idx + 1))
+      |> :binary.part({0, len})
   end
 
   defp pad(bin, _, len) when byte_size(bin) == len, do: bin
