@@ -9,8 +9,8 @@ defmodule Neuronome.Matrix do
   
   def init(args \\ []) do
     {:ok, spi} = SPI.start_link("spidev0.0",
-                                          [delay_us: 500,
-                                           speed_hz: 125_000])
+                                          [delay_us: 750,
+                                           speed_hz: 100_000])
     initmap = :binary.copy(<< 0x00 >>, 64)
     write(spi, initmap)
     {:ok, {spi, initmap}}
