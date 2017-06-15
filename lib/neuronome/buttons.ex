@@ -9,12 +9,19 @@ defmodule Neuronome.Buttons do
   end
 
   def init(args \\ []) do
-    {:ok, pid} = I2C.start_link("i2c-1", <<0x20>>)
-    I2C.write(pid, <<0x00>>) # Set PortA to
-    I2C.write(pid, <<0x01>>) # inputs
-    I2C.write(pid, <<0x01>>) # Set PortB to
-    I2C.write(pid, <<0x00>>) # outputs
+    [ dev ] = I2C.device_names()
+    {:ok, pid} = I2C.start_link(dev, 0x20)
+    # PortA is Col pins
+    I2C.write(pid, <<0x00, 0xFF>>) # Set PortA to outputs
+    # PortB is Row pins
+    I2C.write(pid, <<0x01, 0x00>>) # Set PortB to inputs
+    # Set inputs to pullup-resistor
+    I2C.write(pid, <<0x0D, 0xFF>>)
 
+    # Set all Columns HIGH
+    I2C.write(pid, <<0x12, 0xFF>>)
+
+    ## TODO Debounce
     {:ok, pid}
   end
 
