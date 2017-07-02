@@ -74,6 +74,12 @@ defmodule Neuronome.Buttons do
     {transpose(matrix), {pin_state, iodir_state}}
   end
 
+  def transpose([r|_]=matrix), do: transpose(matrix, Enum.map(r, fn _ -> [] end))
+  def transpose([], matrix), do: matrix |> Enum.map(&Enum.reverse/1)
+  def transpose([row | rows], matrix), do: transpose(rows, add_row(row, matrix, []))
+  def add_row([], [], cols), do: cols |> Enum.reverse
+  def add_row([v | vs], [c | cs], cols), do: add_row(vs, cs, [ [ v|c ] | cols ])
+
   """
   key_state: idle | pressed | hold | released
   mode: :output | :input | :input_pullup
