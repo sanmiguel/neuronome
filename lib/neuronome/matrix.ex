@@ -52,7 +52,7 @@ defmodule Neuronome.Matrix do
   end
 
   def term_animate(n) do
-    render = fn(fr) -> format(fr) |> IO.puts end
+    render = fn(fr) -> TermRender.format(fr) |> IO.puts end
     cloud_loop(render, n, cloudbase(), [drops(1), drops(1), drops(1)])
   end
   def cloud_loop(spi, n) do
@@ -69,30 +69,34 @@ defmodule Neuronome.Matrix do
     cloud_loop(render, (n-1), base, [drops0, drops1, drops2])
   end
 
+  defmodule TermRender do
+    def dot(), do: ""
+
+    def colour(<< r :: 3, g :: 3, b :: 2 >>) do
+      r = trunc( 5 * r / 7 )
+      g = trunc( 5 * g / 7 )
+      b = trunc( 5 * b / 3 )
+      IO.ANSI.color(r, g, b)
+    end
+
+    def format(bytes), do: format(bytes, 8)
+    def format(bytes, len), do: format(bytes, [], len, 0)
+    defp format(xs, str, len, len), do: format(xs, [str, "\n"], len, 0)
+    defp format(<<>>, str, _, _), do: str
+    defp format(<< x :: binary-size(1), xs :: binary >>, str, len, n) do
+      format(xs, [ str, " ", IO.ANSI.format([ colour(x), dot() ]) ], len, n+1)
+    end
+
+  end
+
   def byte_to_str(<< x :: binary-size(1) >>) do
     << i :: integer >> = x
     int_to_str(i, 16)
   end
 
-  def dot(), do: ""
-
-  def colour(<< r :: 3, g :: 3, b :: 2 >>) do
-    r = trunc( 5 * r / 7 )
-    g = trunc( 5 * g / 7 )
-    b = trunc( 5 * b / 3 )
-    IO.ANSI.color(r, g, b)
-  end
 
   def int_to_str(i, b) when i < b, do: "0"<>:erlang.integer_to_binary(i, b)
   def int_to_str(i, b), do: :erlang.integer_to_binary(i, b)
-
-  def format(bytes), do: format(bytes, 8)
-  def format(bytes, len), do: format(bytes, [], len, 0)
-  defp format(xs, str, len, len), do: format(xs, [str, "\n"], len, 0)
-  defp format(<<>>, str, _, _), do: str
-  defp format(<< x :: binary-size(1), xs :: binary >>, str, len, n) do
-    format(xs, [ str, " ", IO.ANSI.format([ colour(x), dot() ]) ], len, n+1)
-  end
 
   def reverse(bin), do: reverse(bin, <<>>)
   defp reverse(<<>>, acc), do: acc
