@@ -109,11 +109,9 @@ defmodule Neuronome.Buttons do
       # - set HIGH
       # - set to INPUT
       read_col = fn(c, %{pin_state: ps, iodir_state: iods}=st) ->
-        st = pin_mode(st, c, :output)
-        st = pin_write(st, c, :low)
+        st = st |> pin_mode(c, :output) |> pin_write(c, :low)
         row_vals = Enum.map(rows, read_row)
-        st = pin_write(st, c, :high)
-        st = pin_mode(st, c, :input)
+        st = st |> pin_write(c, :high) |> pin_mode(c, :input)
         {row_vals, st}
       end
       {matrix, state} = Enum.map_reduce(cols, state, read_col)
