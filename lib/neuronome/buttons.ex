@@ -46,7 +46,12 @@ defmodule Neuronome.Buttons do
       iodir_state = 0xFFFF
       # NB We keep {pin,iodir}_state as integers because it's easier
       # for the Bitwise operations later
-      {:ok, {pid, rows, cols, pin_state, iodir_state}, @debounce_time}
+      state = %{
+        pid: pid,
+        rows: rows, cols: cols,
+        pin_state: pin_state,
+        iodir_state: iodir_state}
+      {:ok, state}
     end
 
     """
@@ -59,7 +64,7 @@ defmodule Neuronome.Buttons do
       pin_state
     end
 
-    defp pin_read(pid, pin) do
+    defp pin_read(%{pid: pid}, pin) do
       << values :: integer-size(16) >> = I2C.write_read(pid, @gpioa, 2)
       mask = 0b1 <<< pin
       case values &&& mask do
@@ -68,20 +73,20 @@ defmodule Neuronome.Buttons do
       end
     end
 
-    defp pin_write(pid, pin, level, pin_state) do
+    defp pin_write(%{pid: pid, pin_state: pin_state}=state, pin, level) do
       mask = 0b1 <<< pin
       pin_state = mask_pin_state(level, pin_state, mask)
       I2C.write(pid, @gpioa <> << pin_state :: integer-size(16) >>)
-      pin_state
+      %{state | pin_state: pin_state}
     end
     defp mask_pin_state(:high, pin_state, mask), do: pin_state ||| mask
     defp mask_pin_state(_low , pin_state, mask), do: pin_state &&& ~~~mask
 
-    defp pin_mode(pid, pin, mode, iodir_state) do
+    defp pin_mode(%{pid: pid, iodir_state: iodir_state}=state, pin, mode) do
       mask = 0b1 <<< pin
       iodir_state = mask_iodir_state(mode, iodir_state, mask)
       I2C.write(pid, @iodira <> << iodir_state :: integer-size(16) >>)
-      iodir_state
+      %{ state | iodir_state: iodir_state }
     end
 
     defp mask_iodir_state(:output, iodir_state, mask), do: iodir_state &&& ~~~mask
@@ -89,12 +94,13 @@ defmodule Neuronome.Buttons do
 
     # rows: list of pins (0-idxd) on @gpiob
     # cols: list of pins (0-idxd) on @gpioa
-    def scan_keys(pid, rows, cols, pin_state, iodir_state) do
+    def scan_keys(%{pid: pid, rows: rows, cols: cols,
+                    pin_state: pin_state, iodir_state: iodir_state}=state) do
       # Set all row pins to INPUT PULLUP
-      reduce_fun = fn(r, iods) -> pin_mode(pid, r, :input_pullup, iods) end
-      iodir_state = Enum.reduce(rows, iodir_state, reduce_fun)
+      reduce_fun = fn(r, st) -> pin_mode(st, r, :input_pullup) end
+      state = Enum.reduce(rows, state, reduce_fun)
 
-      read_row = fn(r) -> not pin_read(pid, r) end
+      read_row = fn(r) -> not pin_read(state, r) end
       # For each column pin
       # - set to OUTPUT
       # - set LOW
@@ -102,15 +108,15 @@ defmodule Neuronome.Buttons do
       #  - read pin, invert (active low, invert to high)
       # - set HIGH
       # - set to INPUT
-      read_col = fn(c, {ps, iods}) ->
-        iods = pin_mode(pid, c, :output, iods)
-        ps = pin_write(pid, c, :low, ps)
+      read_col = fn(c, %{pin_state: ps, iodir_state: iods}=st) ->
+        st = pin_mode(st, c, :output)
+        st = pin_write(st, c, :low)
         row_vals = Enum.map(rows, read_row)
-        ps = pin_write(pid, c, :high, ps)
-        iods = pin_mode(pid, c, :input, iods)
-        {row_vals, {ps, iods}}
+        st = pin_write(st, c, :high)
+        st = pin_mode(st, c, :input)
+        {row_vals, st}
       end
-      {matrix, {pin_state, iodir_state}} = Enum.map_reduce(cols, {pin_state, iodir_state}, read_col)
+      {matrix, state} = Enum.map_reduce(cols, state, read_col)
     end
 
   end
