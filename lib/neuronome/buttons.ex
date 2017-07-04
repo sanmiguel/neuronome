@@ -108,8 +108,7 @@ defmodule Neuronome.Buttons do
     def scan_keys(%{pid: pid, rows: rows, cols: cols,
                     pin_state: pin_state, iodir_state: iodir_state}=state) do
       # Set all row pins to INPUT PULLUP
-      reduce_fun = fn(r, st) -> pin_mode(st, r, :input_pullup) end
-      state = Enum.reduce(rows, state, reduce_fun)
+      state = gpio_mode(state, 0, :input_pullup)
 
       read_row = fn(r) -> not pin_read(state, r) end
       # For each column pin
