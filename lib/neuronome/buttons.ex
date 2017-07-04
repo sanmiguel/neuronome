@@ -82,11 +82,22 @@ defmodule Neuronome.Buttons do
     defp mask_pin_state(:high, pin_state, mask), do: pin_state ||| mask
     defp mask_pin_state(_low , pin_state, mask), do: pin_state &&& ~~~mask
 
-    defp pin_mode(%{pid: pid, iodir_state: iodir_state}=state, pin, mode) do
+    # Set the mode for an entire gpio bank (@gpioa or @gpiob via @iodira and @iodirb resp.)
+    defp gpio_mode(state, offset, mode) when offset in [ 0, 8 ] do
+      # NB offset should be either 0 or 8
+      mask = 0b11111111 <<< offset
+      mask_mode(state, mode, mask)
+    end
+
+    defp pin_mode(state, pin, mode) do
       mask = 0b1 <<< pin
-      iodir_state = mask_iodir_state(mode, iodir_state, mask)
-      I2C.write(pid, @iodira <> << iodir_state :: integer-size(16) >>)
-      %{ state | iodir_state: iodir_state }
+      mask_mode(state, mode, mask)
+    end
+
+    defp mask_mode(%{pid: pid, iodir_state: iods}=state, mode, mask) do
+      iods = mask_iodir_state(mode, iods, mask)
+      I2C.write(pid, @iodira <> << iods :: integer-size(16) >>)
+      %{ state | iodir_state: iods }
     end
 
     defp mask_iodir_state(:output, iodir_state, mask), do: iodir_state &&& ~~~mask
