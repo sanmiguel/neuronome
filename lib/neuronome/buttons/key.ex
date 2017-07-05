@@ -19,8 +19,12 @@ defmodule Neuronome.Buttons.Key do
   # Remember: debouncing is taken care of outside of this module
   # The enclosing module should only call next_state/2 when debouncing is clear
   def next_state(%Key{}=key, button_state) do
+    next_state(key, millis(), button_state)
+  end
+  # NB This sig makes testing easier
+  def next_state(%Key{}=key, time, button_state) do
     key = set_unchanged(key)
-    transition(key, millis(), button_state)
+    transition(key, time, button_state)
   end
 
   ## TODO Move this somewhere else

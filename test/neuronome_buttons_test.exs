@@ -37,4 +37,14 @@ defmodule NeuronomeButtonsTest do
     assert :idle == k.state
   end
 
+  test "press-hold gives :hold" do
+    k = Key.new(0, 0)
+    t = 0
+    k = Key.next_state(k, t, true)
+    assert :pressed == k.state
+    k = Key.next_state(k, t+250, true)
+    assert :pressed == k.state
+    k = Key.next_state(k, t+501, true)
+    assert :hold == k.state
+  end
 end
