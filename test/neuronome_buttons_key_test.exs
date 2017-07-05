@@ -1,4 +1,4 @@
-defmodule NeuronomeButtonsTest do
+defmodule NeuronomeButtonsKeyTest do
   use ExUnit.Case
 
   alias Neuronome.Buttons.Key

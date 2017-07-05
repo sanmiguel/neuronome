@@ -34,7 +34,7 @@ defmodule Neuronome.Buttons.Key do
     transition_to(%{key | hold_timer: time}, :pressed)
   end
   # TODO NB This uses a timer per key, not a global timer as per the original
-  defp transition(%Key{state: :pressed, hold_timer: time_was}=key, time_now, _)
+  defp transition(%Key{state: :pressed, hold_timer: time_was}=key, time_now, @closed)
   when (time_now - time_was)> @holdtime do
     transition_to(key, :hold)
   end
