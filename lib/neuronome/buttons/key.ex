@@ -1,10 +1,12 @@
-defmodule Key do
+defmodule Neuronome.Buttons.Key do
+  alias Neuronome.Buttons.Key
+
   @enforce_keys [:code, :char]
   defstruct [state: :idle,
              state_changed: false,
              code: -1, char: -1, hold_timer: nil]
 
-             # TODO open and closed need putting somewhere inheritable
+  # TODO open and closed need putting somewhere inheritable
   @closed true
   @open false
 
