@@ -8,6 +8,8 @@ defmodule Neuronome.Application do
 
     # Define workers and child supervisors to be supervised
     children = [
+      worker(Neuronome.Buttons.ActivityHandler, []),
+      worker(Neuronome.Buttons.Bridge, []),
       worker(Neuronome.Matrix, []),
     ]
 

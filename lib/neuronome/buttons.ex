@@ -22,31 +22,48 @@ defmodule Neuronome.Buttons do
     defp millis(), do: :os.system_time / 1_000_000 |> trunc
 
     def start_link() do
-      listener = self()
-      fun = fn() -> __MODULE__.start(listener) end
+      fun = fn() -> __MODULE__.start() end
       spawn_link(fun)
     end
 
-    def start(listener) when is_pid(listener) do
+    def start() do
       {:ok, state} = Hardware.init()
-      loop(listener, millis(), state, [])
+      loop(millis(), state, [])
     end
 
-    def loop(listener, lasttime, state, keybuffer) do
+    def loop(lasttime, state, keybuffer) do
       timenow = millis()
       delta = timenow - lasttime
       cond do
         delta < @debounce_time ->
-          loop(listener, lasttime, state, keybuffer)
+          loop(lasttime, state, keybuffer)
         delta >= @debounce_time ->
           {scan, state} = Hardware.scan_keys(state)
           {activity, grid} = Buttons.update_list(keybuffer, scan, state.grid)
           case activity do
             [] -> :ok
-            _ -> send(listener, {:activity, activity})
+            _ ->
+              for %Key{code: co, char: ch, state: st} <- activity do
+                GenEvent.notify(ButtonActivity, {:button, st, co, ch})
+              end
           end
-          loop(listener, timenow, %{state | grid: grid}, keybuffer)
+          loop(timenow, %{state | grid: grid}, keybuffer)
       end
+    end
+  end
+
+  defmodule ActivityHandler do
+    use GenEvent
+
+    def start_link() do
+      {:ok, pid} = GenEvent.start_link(name: ButtonActivity)
+      :ok = GenEvent.add_handler(pid, __MODULE__, [])
+      {:ok, pid}
+    end
+
+    def handle_event({:button, state, code, char}=act, activity)
+        when state in [ :pressed, :released, :idle, :hold ] do
+      {:ok, activity ++ [act]}
     end
   end
 
