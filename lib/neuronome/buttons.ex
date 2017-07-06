@@ -1,5 +1,4 @@
 defmodule Neuronome.Buttons do
-  use GenServer
   use Bitwise
 
   alias ElixirALE.I2C
@@ -49,9 +48,36 @@ defmodule Neuronome.Buttons do
           loop(listener, timenow, %{state | grid: grid}, keybuffer)
       end
     end
-
   end
 
+  @moduledoc """
+  This module provides a gen_server that starts and links to the Button.Process above,
+  allowing us to fit it into an OTP supervision tree.
+  """
+  defmodule Bridge do
+    use GenServer
+
+    alias Neuronome.Buttons.Process
+
+    def start_link() do
+      GenServer.start_link(__MODULE__, [], name: Buttons.Bridge)
+    end
+
+    # TODO This process is probably not the best place for the keypress log
+    # to go to but whatever
+    def init(args \\ []) do
+      proc = Process.start_link()
+      {:ok, {proc, []}}
+    end
+
+    def handle_call(:flush, _, {proc, log}) do
+      {:reply, {:ok, log}, {proc, []}}
+    end
+
+    def handle_info({:activity, activity}, {proc, log}) do
+      {:noreply, {proc, log ++ activity}}
+    end
+  end
   end
 
   def transpose([r|_]=matrix), do: transpose(matrix, Enum.map(r, fn _ -> [] end))
