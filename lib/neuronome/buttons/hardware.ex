@@ -40,11 +40,11 @@ defmodule Neuronome.Buttons.Hardware do
     # TODO This might need transposing before flattening. I can't remember
     keys =
     for {cidx, cpin} <- cols do
-    row = 
-    for {ridx, rpin} <- rows do
-    code = 1 + cidx * rlen + ridx
-    %{ cidx: cidx, cpin: cpin, ridx: ridx, rpin: rpin, code: code, char: code }
-    end
+      row = 
+        for {ridx, rpin} <- rows do
+          code = 1 + cidx * rlen + ridx
+          %{ cidx: cidx, cpin: cpin, ridx: ridx, rpin: rpin, code: code, char: code }
+        end
     end
     |> :lists.flatten
     |> Enum.into(%{}, fn(%{code: c}=k) -> {c, k} end)
