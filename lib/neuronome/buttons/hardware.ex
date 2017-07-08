@@ -1,6 +1,8 @@
 defmodule Neuronome.Buttons.Hardware do
   use Bitwise
   
+  alias Neuronome.Buttons.Grid
+  alias Neuronome.Buttons.Key
   alias ElixirALE.I2C
 
   @gpioa <<0x12>>
@@ -26,6 +28,8 @@ defmodule Neuronome.Buttons.Hardware do
     # TODO Tweak the order of these
     rows = :lists.seq(0, 7) # @gpioa
     cols = :lists.seq(8, 15) # @gpiob
+
+    grid = Grid.new(rows, cols)
 
     """
     # Pair up the pin indexes with logical indexes
@@ -59,7 +63,7 @@ defmodule Neuronome.Buttons.Hardware do
     # for the Bitwise operations later
     state = %{
       pid: pid,
-      # keys: keys,
+      grid: grid,
       rows: rows, cols: cols,
       pin_state: pin_state,
       iodir_state: iodir_state}

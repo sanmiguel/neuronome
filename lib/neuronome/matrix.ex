@@ -6,6 +6,11 @@ defmodule Neuronome.Matrix do
   def start_link() do
     GenServer.start_link(Neuronome.Matrix, [])
   end
+
+  @doc """
+  Sets the given button position (1..64) to the given byte
+  """
+  def set(pos, val), do: GenServer.call(Matrix, {:set, pos, val})
   
   def init(args \\ []) do
     {:ok, spi} = SPI.start_link("spidev0.0",
@@ -19,6 +24,11 @@ defmodule Neuronome.Matrix do
   def handle_call({:write, bitmap}, _, {spi, _}) when byte_size(bitmap) == 64 do
     write(spi, bitmap)
     {:reply, :ok, {spi, bitmap}}
+  end
+  def handle_call({:set, pos, val}, _, {spi, bytes}) when pos <= 64 do
+    newbytes = set(pos, val, bytes)
+    write(spi, newbytes)
+    {:reply, :ok, {spi, newbytes}}
   end
 
   defp write(spi, bitmap) when byte_size(bitmap) == 64 do
@@ -34,6 +44,12 @@ defmodule Neuronome.Matrix do
        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 >>
+  end
+
+  def set(pos, val, bytes) do
+    pos = pos - 1 # positions are 1-indexed
+    << head :: binary-size(pos), _ :: size(8), tail :: binary >> = bytes
+    << head::binary, val::binary, tail::binary >>
   end
 
   # TODO Replace b < 7 with b < 3
