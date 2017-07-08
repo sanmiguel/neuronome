@@ -1,10 +1,11 @@
 defmodule Neuronome.Matrix do
   use GenServer
+  use Bitwise
 
   alias ElixirALE.SPI
 
   def start_link() do
-    GenServer.start_link(Neuronome.Matrix, [])
+    GenServer.start_link(Neuronome.Matrix, [], name: Matrix)
   end
 
   @doc """
