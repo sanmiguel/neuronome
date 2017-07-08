@@ -11,6 +11,7 @@ defmodule Neuronome.Application do
       worker(Neuronome.Buttons.ActivityHandler, []),
       worker(Neuronome.Buttons.Bridge, []),
       worker(Neuronome.Matrix, []),
+      supervisor(Performance, []),
       worker(Task, [fn -> init_network() end], restart: :transient, id: Nerves.Init.Network),
     ]
 
@@ -20,7 +21,6 @@ defmodule Neuronome.Application do
 
   def init_network() do
     [ssid: ssid, key_mgmt: km, psk: k] = Application.get_env(:neuronome, :wlan0)
-    {:ok, _} = Nerves.Network.setup("wlan0", ssid: ssid, key_mgmt: km, psk: k)
     {:ok, _} = Nerves.Network.setup("wlan0", ssid: ssid, key_mgmt: km, psk: k)
   end
 end

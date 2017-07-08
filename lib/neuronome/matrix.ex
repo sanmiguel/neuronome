@@ -12,6 +12,7 @@ defmodule Neuronome.Matrix do
   Sets the given button position (1..64) to the given byte
   """
   def set(pos, val), do: GenServer.call(Matrix, {:set, pos, val})
+  def set_row(pos, val), do: GenServer.call(Matrix, {:set, pos, val})
   
   def init(args \\ []) do
     {:ok, spi} = SPI.start_link("spidev0.0",
@@ -19,22 +20,24 @@ defmodule Neuronome.Matrix do
                                            speed_hz: 100_000])
     initmap = :binary.copy(<< 0x00 >>, 64)
     write(spi, initmap)
-    {:ok, {spi, initmap}}
+    {:ok, validate({spi, initmap})}
   end
 
   def handle_call({:write, bitmap}, _, {spi, _}) when byte_size(bitmap) == 64 do
     write(spi, bitmap)
-    {:reply, :ok, {spi, bitmap}}
+    {:reply, :ok, validate({spi, bitmap})}
   end
-  def handle_call({:set, pos, val}, _, {spi, bytes}) when pos <= 64 do
+  def handle_call({:set, pos, val}, _, {spi, bytes}) when byte_size(val) * pos <= 64 do
     newbytes = set(pos, val, bytes)
     write(spi, newbytes)
-    {:reply, :ok, {spi, newbytes}}
+    {:reply, :ok, validate({spi, newbytes})}
   end
 
   defp write(spi, bitmap) when byte_size(bitmap) == 64 do
     SPI.transfer(spi, bitmap)
   end
+
+  defp validate({spi, bitmap}=state) when is_pid(spi) and byte_size(bitmap) == 64, do: state
 
   def blank() do
     << 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -48,8 +51,10 @@ defmodule Neuronome.Matrix do
   end
 
   def set(pos, val, bytes) do
+    IO.puts("set(#{inspect pos}, #{inspect val}, #{inspect bytes})")
     pos = pos - 1 # positions are 1-indexed
-    << head :: binary-size(pos), _ :: size(8), tail :: binary >> = bytes
+    len = bit_size(val)
+    << head :: binary-size(pos), _ :: size(len), tail :: binary >> = bytes
     << head::binary, val::binary, tail::binary >>
   end
 
