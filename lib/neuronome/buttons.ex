@@ -95,7 +95,38 @@ defmodule Neuronome.Buttons do
       {:noreply, {proc, log ++ activity}}
     end
   end
+
+  def run(count) do
+    {:ok, state} = Hardware.init()
+    run(state, count)
   end
+
+  def run(state, 0), do: IO.puts("Finished")
+  def run(state, count) do
+    {scan, state} = Hardware.scan_keys(state)
+
+    {activity, grid} = update_list([], scan, state.grid)
+    state = %{state | grid: grid}
+    # Only render if there was a change
+    case activity do
+      [] -> :ok
+      _ -> render(scan)
+    end
+    :timer.sleep(250)
+    run(state, count-1)
+  end
+
+  def render(matrix) do
+    bytes = colourise(matrix)
+    Neuronome.Matrix.TermRender.format(bytes) |> IO.puts
+    IO.ANSI.reset() |> IO.puts
+  end
+
+  defp colourise(matrix), do: colourise(matrix, << 0::3, 1::3, 2::2 >>, << 3::3, 0::3, 0::2 >>, <<>>)
+  defp colourise([], _, _, bytes), do: bytes
+  defp colourise([ [] | rows ], on, off, bytes), do: colourise(rows, on, off, bytes)
+  defp colourise([[true | row] | rows], on, off, bytes), do: colourise([row | rows], on, off, bytes <> on)
+  defp colourise([[false | row] | rows], on, off, bytes), do: colourise([row | rows], on, off, bytes <> off)
 
   def transpose([r|_]=matrix), do: transpose(matrix, Enum.map(r, fn _ -> [] end))
   def transpose([], matrix), do: matrix |> Enum.map(&Enum.reverse/1)
