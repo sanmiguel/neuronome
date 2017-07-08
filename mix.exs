@@ -51,6 +51,7 @@ defmodule Neuronome.Mixfile do
   # Type "mix help deps" for more examples and options
   def deps do
     [{:nerves, "~> 0.5.0", runtime: false},
+     {:osc, github: "mujaheed/erlang-osc"},
      {:elixir_ale, "~> 1.0"}] ++
     deps(@target)
   end
