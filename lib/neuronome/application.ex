@@ -11,11 +11,16 @@ defmodule Neuronome.Application do
       worker(Neuronome.Buttons.ActivityHandler, []),
       worker(Neuronome.Buttons.Bridge, []),
       worker(Neuronome.Matrix, []),
+      worker(Task, [fn -> init_network() end], restart: :transient, id: Nerves.Init.Network),
     ]
 
-    # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
-    # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Neuronome.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  def init_network() do
+    [ssid: ssid, key_mgmt: km, psk: k] = Application.get_env(:neuronome, :wlan0)
+    {:ok, _} = Nerves.Network.setup("wlan0", ssid: ssid, key_mgmt: km, psk: k)
+    {:ok, _} = Nerves.Network.setup("wlan0", ssid: ssid, key_mgmt: km, psk: k)
   end
 end

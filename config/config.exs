@@ -5,6 +5,15 @@
 # is restricted to this project.
 use Mix.Config
 
+config :nerves_network,
+  regulatory_domain: :"PL"
+
+# Wifi config, taken from nerves-project/nerves-examples/hello_wifi
+config :neuronome, :wlan0,
+  ssid: System.get_env("NERVES_WIFI_SSID"),
+  key_mgmt: :"WPA-PSK",
+  psk: System.get_env("NERVES_WIFI_PSK")
+
 # Customize the firmware. Uncomment all or parts of the following
 # to add files to the root filesystem or modify the firmware
 # archive.
