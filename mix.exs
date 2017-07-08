@@ -58,7 +58,8 @@ defmodule Neuronome.Mixfile do
   # Specify target specific dependencies
   def deps("host"), do: []
   def deps(target) do
-    [{:nerves_runtime, "~> 0.1.0"},
+    [{:nerves_runtime, "~> 0.3"},
+     {:nerves_network, github: "nerves-project/nerves_network"},
      {:"nerves_system_#{target}", "~> 0.10", runtime: false}]
   end
 
