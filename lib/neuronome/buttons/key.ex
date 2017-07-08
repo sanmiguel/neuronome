@@ -55,9 +55,5 @@ defmodule Neuronome.Buttons.Key do
     # TODO Trigger event listeners (char) / send messages / whatever
     %{key | state: next_state, state_changed: true}
   end
-
-  defp pressed(cols, col, row) do
-    :lists.nth(row+1, :lists.nth(col+1, cols))
-  end
 end
 
