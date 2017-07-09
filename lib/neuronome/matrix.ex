@@ -9,6 +9,13 @@ defmodule Neuronome.Matrix do
   end
 
   @doc """
+  Writes 64 bytes to the matrix
+  """
+  def write(bytes) when byte_size(bytes) == 64 do
+    GenServer.call(Matrix, {:write, bytes})
+  end
+
+  @doc """
   Sets the given button position (1..64) to the given byte
   """
   def set(pos, val), do: GenServer.call(Matrix, {:set, pos, val})
@@ -51,7 +58,6 @@ defmodule Neuronome.Matrix do
   end
 
   def set(pos, val, bytes) do
-    IO.puts("set(#{inspect pos}, #{inspect val}, #{inspect bytes})")
     pos = pos - 1 # positions are 1-indexed
     len = bit_size(val)
     << head :: binary-size(pos), _ :: size(len), tail :: binary >> = bytes
