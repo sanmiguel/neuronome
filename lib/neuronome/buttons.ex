@@ -61,9 +61,15 @@ defmodule Neuronome.Buttons do
       {:ok, pid}
     end
 
+    def purge(), do: GenEvent.call(ButtonActivity, __MODULE__, :purge)
+
     def handle_event({:button, state, code, char}=act, activity)
         when state in [ :pressed, :released, :idle, :hold ] do
       {:ok, activity ++ [act]}
+    end
+
+    def handle_call(:purge, activity) do
+      {:ok, activity, []}
     end
   end
 
