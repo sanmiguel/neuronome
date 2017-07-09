@@ -11,8 +11,8 @@ defmodule Neuronome.Application do
       worker(Neuronome.Buttons.ActivityHandler, []),
       worker(Neuronome.Buttons.Bridge, []),
       worker(Neuronome.Matrix, []),
-      supervisor(Performance, []),
-      worker(Task, [fn -> init_network() end], restart: :transient, id: Nerves.Init.Network),
+      supervisor(Performance.Sup, []),
+      #worker(Task, [fn -> init_network() end], restart: :transient, id: Nerves.Init.Network),
     ]
 
     opts = [strategy: :one_for_one, name: Neuronome.Supervisor]
@@ -22,5 +22,6 @@ defmodule Neuronome.Application do
   def init_network() do
     [ssid: ssid, key_mgmt: km, psk: k] = Application.get_env(:neuronome, :wlan0)
     {:ok, _} = Nerves.Network.setup("wlan0", ssid: ssid, key_mgmt: km, psk: k)
+    IO.puts("REMEMBER TO RUN Neuronome.wifi()")
   end
 end
