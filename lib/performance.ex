@@ -1,21 +1,24 @@
 defmodule Performance do
+  defmodule Sup do
+    use Supervisor
 
-  def start_session() do
-    import Supervisor.Spec, warn: false
+    def start_link() do
+      Supervisor.start_link(__MODULE__, [], [name: Performance.Sup])
+    end
 
-    opts = [strategy: :simple_one_for_one, name: Performance.Supervisor]
-
-    childspec = worker(Performance.Worker, [])
-    Supervisor.start_link([childspec], opts)
-  end
-
-  def begin(mod) do
-    Supervisor.start_child(Performance.Supervisor, [mod])
+    def init([]) do
+      childspec = worker(Performance.Worker, [])
+      supervise([childspec], strategy: :simple_one_for_one)
+    end
   end
 
   defmodule Worker do
     def start_link(module) do
       module.start_link()
     end
+  end
+
+  def begin(mod) do
+    Supervisor.start_child(Performance.Sup, [mod])
   end
 end
