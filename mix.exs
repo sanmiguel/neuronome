@@ -52,6 +52,9 @@ defmodule Neuronome.Mixfile do
   def deps do
     [{:nerves, "~> 0.5.0", runtime: false},
      {:osc, github: "mujaheed/erlang-osc"},
+     # TODO Perhaps these should be under deps(target) below?
+     # That might allow us to replace elixir_ale with something for testing on "host"?
+     {:nerves_firmware_ssh, github: "fhunleth/nerves_firmware_ssh"},
      {:elixir_ale, "~> 1.0"}] ++
     deps(@target)
   end
