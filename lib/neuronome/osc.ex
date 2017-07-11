@@ -26,7 +26,7 @@ defmodule OSC do
 
     def handle_cast({:send, :bundle, :immediately, ms}, sock) do
       bytes = :osc_lib.encode({:bundle, :immediately, ms})
-      :ok = :gen_udp.send(sock, '192.168.8.108', 4559, bytes)
+      :ok = :gen_udp.send(sock, '192.168.1.31', 4559, bytes)
       {:noreply, sock}
     end
     def handle_cast({:send_many, messages}, sock) do
@@ -41,8 +41,8 @@ defmodule OSC do
     defp send_message(address, args, sock) do
       IO.puts("OSC #{inspect address} #{inspect args}")
       bytes = :osc_lib.encode({:message, address, args})
-      :ok = :gen_udp.send(sock, '192.168.8.108', 4559, bytes)
+      :ok = :gen_udp.send(sock, '192.168.1.31', 4559, bytes)
     end
-      
+
   end
 end
